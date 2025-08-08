@@ -229,7 +229,9 @@ async function callGeminiApi(apiKey, question, context, selectedImages = [], mod
     const tokenLimits = getTokenLimitsForModel(model);
     
     // Prepare the prompt text
-    const promptText = `Based on the following webpage content${selectedImages.length > 0 ? ' and provided images' : ''}, please provide a concise answer to the user's question. If the content is irrelevant, say so.
+    const promptText = `Based on the following webpage content${selectedImages.length > 0 ? ' and provided images' : ''}, please provide a concise answer to the user's question. 
+    
+    IMPORTANT: If the webpage content doesn't contain the answer, use your general knowledge to provide the most accurate and helpful response possible. You should always try to answer the question even if it's not directly related to the webpage content.
 
     Webpage Content:
     ---
@@ -246,7 +248,7 @@ async function callGeminiApi(apiKey, question, context, selectedImages = [], mod
             parts: [{ text: promptText }]
         }],
         generationConfig: {
-            temperature: 0.4,
+            temperature: 0.7,  // Increased temperature for more creative responses when using general knowledge
             topK: 32,
             topP: 0.95,
             maxOutputTokens: tokenLimits.outputTokens
