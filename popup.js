@@ -55,9 +55,11 @@ agentModeToggle.addEventListener('change', () => {
     if (isAgentMode) {
         questionInput.placeholder = 'Enter a task or question (e.g., "Solve the math problems on this page" or "What is this article about?")...';
         answerDiv.textContent = 'Agent Mode activated. The AI will automatically analyze the page content, including images, and perform web searches if needed.';
+        askButton.textContent = 'Run Agent';
     } else {
         questionInput.placeholder = 'e.g., What is the nature of this magic...';
         answerDiv.textContent = 'Standard Mode. Ask a question about the webpage content.';
+        askButton.textContent = 'Ask Gemini';
     }
 });
 
@@ -187,13 +189,16 @@ function updateSelectedImagesUI() {
     }
 }
 
-// --- Main Logic: Asking a Question ---
+// --- Main Logic: Asking a Question or Performing a Task ---
 
 askButton.addEventListener('click', async () => {
     const question = questionInput.value.trim();
+    const isAgentMode = agentModeToggle.checked;
 
     if (!question) {
-        answerDiv.textContent = 'Error: Please enter a question.';
+        answerDiv.textContent = isAgentMode ? 
+            'Error: Please enter a task or question.' : 
+            'Error: Please enter a question.';
         return;
     }
 
@@ -201,7 +206,7 @@ askButton.addEventListener('click', async () => {
     loader.style.display = 'block';
     answerDiv.style.display = 'none';
     askButton.disabled = true;
-    askButton.textContent = 'Thinking...';
+    askButton.textContent = isAgentMode ? 'Agent Working...' : 'Thinking...';
 
     try {
         // 1. Get the current active tab
@@ -232,7 +237,10 @@ askButton.addEventListener('click', async () => {
         loader.style.display = 'none';
         answerDiv.style.display = 'block';
         askButton.disabled = false;
-        askButton.textContent = 'Ask Gemini';
+        
+        // Update button text based on mode
+        const isAgentMode = agentModeToggle.checked;
+        askButton.textContent = isAgentMode ? 'Run Agent' : 'Ask Gemini';
     }
 });
 
@@ -247,19 +255,46 @@ async function callGeminiApi(apiKey, question, context, selectedImages = [], mod
     // Get appropriate token limits based on the model
     const tokenLimits = getTokenLimitsForModel(model);
     
-    // Prepare the prompt text
-    const promptText = `Based on the following webpage content${selectedImages.length > 0 ? ' and provided images' : ''}, please provide a concise answer to the user's question. 
+    // Check if agent mode is enabled
+    const isAgentMode = agentModeToggle.checked;
     
-    IMPORTANT: If the webpage content doesn't contain the answer, use your general knowledge to provide the most accurate and helpful response possible. You should always try to answer the question even if it's not directly related to the webpage content.
+    // Prepare the prompt text based on mode
+    let promptText;
+    
+    if (isAgentMode) {
+        promptText = `You are an advanced AI agent that can analyze webpage content and images to complete tasks. 
+        
+        AGENT INSTRUCTIONS:
+        1. Analyze the webpage content and any provided images thoroughly
+        2. If the question involves solving problems visible in the content or images, solve them step by step
+        3. If you can't find the answer in the provided content, explicitly state that you need to search for information
+        4. For any factual questions not answered by the content, assume you have performed a web search and provide the most accurate answer based on your knowledge
+        5. If asked to perform a specific task on the webpage, describe exactly how you would complete it
+        
+        Webpage Content:
+        ---
+        ${context.substring(0, tokenLimits.inputTokens)}
+        ---
 
-    Webpage Content:
-    ---
-    ${context.substring(0, tokenLimits.inputTokens)}
-    ---
+        User's Task/Question: "${question}"
+        
+        First analyze if this request can be answered using only the provided content. If not, indicate what external information you would need to search for, then provide your best answer as if you had that information.
+        
+        Response:`;  
+    } else {
+        promptText = `Based on the following webpage content${selectedImages.length > 0 ? ' and provided images' : ''}, please provide a concise answer to the user's question. 
+        
+        IMPORTANT: If the webpage content doesn't contain the answer, use your general knowledge to provide the most accurate and helpful response possible. You should always try to answer the question even if it's not directly related to the webpage content.
 
-    User's Question: "${question}"
+        Webpage Content:
+        ---
+        ${context.substring(0, tokenLimits.inputTokens)}
+        ---
 
-    Answer:`;
+        User's Question: "${question}"
+
+        Answer:`;
+    }
     
     // Prepare the request body
     const requestBody = {

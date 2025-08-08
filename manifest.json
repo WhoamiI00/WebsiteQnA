@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Webpage Q&A with Gemini",
-  "version": "1.3",
-  "description": "Ask questions about webpages, images, and get answers beyond page content using Gemini's knowledge",
+  "version": "1.4",
+  "description": "Ask questions about webpages, images, and use Agent Mode to automatically analyze content and perform web searches",
   "permissions": [
     "activeTab",
     "scripting",
