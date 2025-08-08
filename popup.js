@@ -4,6 +4,8 @@ const askButton = document.getElementById('ask');
 const answerDiv = document.getElementById('answer');
 const loader = document.getElementById('loader');
 const modelSelect = document.getElementById('modelSelect');
+const agentModeToggle = document.getElementById('agentModeToggle');
+const agentModeStatus = document.getElementById('agentModeStatus');
 
 // Hard-coded API key - Replace with your actual Gemini API key
 const GEMINI_API_KEY = "AIzaSyAXKXQcr4sNmPQO814zkocKctBaeGsELbY";
@@ -40,6 +42,23 @@ modelSelect.addEventListener('change', () => {
     };
     
     answerDiv.textContent = modelInfo[modelSelect.value] || 'Model selected. Ask a question to get started.';
+});
+
+// --- Agent Mode Logic ---
+
+// Add event listener for agent mode toggle
+agentModeToggle.addEventListener('change', () => {
+    const isAgentMode = agentModeToggle.checked;
+    agentModeStatus.textContent = isAgentMode ? 'On' : 'Off';
+    
+    // Update UI based on agent mode
+    if (isAgentMode) {
+        questionInput.placeholder = 'Enter a task or question (e.g., "Solve the math problems on this page" or "What is this article about?")...';
+        answerDiv.textContent = 'Agent Mode activated. The AI will automatically analyze the page content, including images, and perform web searches if needed.';
+    } else {
+        questionInput.placeholder = 'e.g., What is the nature of this magic...';
+        answerDiv.textContent = 'Standard Mode. Ask a question about the webpage content.';
+    }
 });
 
 // --- Image Selection Logic ---

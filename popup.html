@@ -302,6 +302,62 @@
             background-color: var(--accent-blue);
             color: white;
         }
+        
+        /* Toggle Switch Styling */
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+        }
+        
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 24px;
+        }
+        
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        
+        input:checked + .toggle-slider {
+            background-color: var(--accent-blue);
+        }
+        
+        input:checked + .toggle-slider:before {
+            transform: translateX(26px);
+        }
+        
+        #agentModeStatus {
+            font-weight: 500;
+        }
     </style>
 </head>
 <body>
@@ -327,6 +383,20 @@
                 <option value="gemini-2.5-flash-lite">Gemini 2.5 Flash-Lite (Fast)</option>
                 <option value="gemini-2.0-flash">Gemini 2.0 Flash (Legacy)</option>
             </select>
+        </div>
+
+        <div class="input-group">
+            <div class="label-with-info">
+                <label for="agentModeToggle">Agent Mode:</label>
+                <div class="info-icon" title="Agent Mode: Enables advanced capabilities&#10;- Automatically solves questions from the page&#10;- Performs web searches when needed&#10;- Analyzes images for information">ⓘ</div>
+            </div>
+            <div class="toggle-container">
+                <label class="toggle-switch">
+                    <input type="checkbox" id="agentModeToggle">
+                    <span class="toggle-slider"></span>
+                </label>
+                <span id="agentModeStatus">Off</span>
+            </div>
         </div>
 
         <div class="input-group">
