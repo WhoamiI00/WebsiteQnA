@@ -1,15 +1,15 @@
 {
   "manifest_version": 3,
-  "name": "Webpage Q&A with Gemini",
-  "version": "1.4",
-  "description": "Ask questions about webpages, images, and use Agent Mode to automatically analyze content and perform web searches",
+  "name": "Webpage Q&A with AI Agent",
+  "version": "2.0",
+  "description": "Advanced AI agent that can analyze webpages, answer questions, and perform automated actions like filling forms, answering quizzes, and interacting with page elements",
   "permissions": [
     "activeTab",
     "scripting",
     "storage"
   ],
   "host_permissions": [
-    "https://generativelanguage.googleapis.com/",
+    "https://generativelanguage.googleapis.com/*",
     "<all_urls>"
   ],
   "action": {
@@ -24,5 +24,14 @@
     "16": "./icon.png",
     "48": "./icon.png",
     "128": "./icon.png"
-  }
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self';"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["content.js", "agent.js"],
+      "matches": ["<all_urls>"]
+    }
+  ]
 }

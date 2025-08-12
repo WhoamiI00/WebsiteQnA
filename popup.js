@@ -1,3 +1,5 @@
+// Updated popup.js with enhanced Agent Mode capabilities
+
 // Get references to the HTML elements
 const questionInput = document.getElementById('question');
 const askButton = document.getElementById('ask');
@@ -24,16 +26,11 @@ const imageCountBadge = document.getElementById('imageCountBadge');
 let pageImages = [];
 let selectedImages = [];
 
-// No API key management needed as it's now hard-coded
-
 // --- Model Selection Logic ---
 
-// Add event listener for model selection change
 modelSelect.addEventListener('change', () => {
-    // You could update UI elements based on the selected model if needed
     console.log(`Model changed to: ${modelSelect.value}`);
     
-    // Optional: Display a message about the selected model
     const modelInfo = {
         'gemini-2.5-pro': 'Gemini 2.5 Pro: Best for complex reasoning and high-quality responses',
         'gemini-2.5-flash': 'Gemini 2.5 Flash: Good balance of quality and speed',
@@ -44,34 +41,39 @@ modelSelect.addEventListener('change', () => {
     answerDiv.textContent = modelInfo[modelSelect.value] || 'Model selected. Ask a question to get started.';
 });
 
-// --- Agent Mode Logic ---
+// --- Enhanced Agent Mode Logic ---
 
-// Add event listener for agent mode toggle
 agentModeToggle.addEventListener('change', () => {
     const isAgentMode = agentModeToggle.checked;
     agentModeStatus.textContent = isAgentMode ? 'On' : 'Off';
     
-    // Update UI based on agent mode
     if (isAgentMode) {
-        questionInput.placeholder = 'Enter a task or question (e.g., "Solve the math problems on this page" or "What is this article about?")...';
-        answerDiv.textContent = 'Agent Mode activated. The AI will automatically analyze the page content, including images, and perform web searches if needed.';
-        askButton.textContent = 'Run Agent';
+        questionInput.placeholder = 'Enter a task (e.g., "Answer all quiz questions", "Upvote the first 5 posts", "Fill out this form")...';
+        answerDiv.innerHTML = `
+            <strong>🤖 Agent Mode Activated</strong><br>
+            The AI will:<br>
+            • Analyze the webpage content<br>
+            • Perform actions automatically<br>
+            • Click buttons, select answers, fill forms<br>
+            • Provide detailed reports of actions taken<br><br>
+            <em>Enter a task above and click "Execute Agent"</em>
+        `;
+        askButton.textContent = 'Execute Agent';
+        askButton.style.background = 'linear-gradient(145deg, #e74c3c, #c0392b)';
     } else {
-        questionInput.placeholder = 'e.g., What is the nature of this magic...';
+        questionInput.placeholder = 'e.g., What is this article about?';
         answerDiv.textContent = 'Standard Mode. Ask a question about the webpage content.';
         askButton.textContent = 'Ask Gemini';
+        askButton.style.background = 'linear-gradient(145deg, var(--accent-blue), var(--accent-blue-dark))';
     }
 });
 
-// --- Image Selection Logic ---
+// --- Image Selection Logic (unchanged) ---
 
-// Open the image selection modal
 selectImagesButton.addEventListener('click', async () => {
     try {
-        // Get the current active tab
         const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
 
-        // Execute the content script to get page content and images
         const results = await chrome.scripting.executeScript({
             target: { tabId: tab.id },
             files: ['content.js']
@@ -82,13 +84,9 @@ selectImagesButton.addEventListener('click', async () => {
             throw new Error("Could not retrieve images from the page.");
         }
 
-        // Store the page images
         pageImages = pageData.images;
-
-        // Clear the image grid
         imageGrid.innerHTML = '';
 
-        // Populate the image grid with images from the page
         if (pageImages.length === 0) {
             imageGrid.innerHTML = '<p>No images found on this page.</p>';
         } else {
@@ -97,7 +95,6 @@ selectImagesButton.addEventListener('click', async () => {
                 imageItem.className = 'image-item';
                 imageItem.dataset.index = index;
 
-                // Check if this image is already selected
                 if (selectedImages.some(img => img.src === image.src)) {
                     imageItem.classList.add('selected');
                 }
@@ -107,7 +104,6 @@ selectImagesButton.addEventListener('click', async () => {
                 img.alt = image.alt || 'Image ' + (index + 1);
                 imageItem.appendChild(img);
 
-                // Add click event to select/deselect image
                 imageItem.addEventListener('click', () => {
                     imageItem.classList.toggle('selected');
                 });
@@ -116,7 +112,6 @@ selectImagesButton.addEventListener('click', async () => {
             });
         }
 
-        // Show the modal
         imageModal.style.display = 'block';
 
     } catch (error) {
@@ -125,25 +120,18 @@ selectImagesButton.addEventListener('click', async () => {
     }
 });
 
-// Close the modal when clicking the close button
 closeModalButton.addEventListener('click', () => {
     imageModal.style.display = 'none';
 });
 
-// Close the modal when clicking the cancel button
 cancelImageSelectionButton.addEventListener('click', () => {
     imageModal.style.display = 'none';
 });
 
-// Confirm image selection
 confirmImageSelectionButton.addEventListener('click', () => {
-    // Get all selected images
     const selectedElements = imageGrid.querySelectorAll('.image-item.selected');
-    
-    // Clear the current selection
     selectedImages = [];
     
-    // Add the selected images to the array
     selectedElements.forEach(element => {
         const index = parseInt(element.dataset.index);
         if (!isNaN(index) && pageImages[index]) {
@@ -151,24 +139,17 @@ confirmImageSelectionButton.addEventListener('click', () => {
         }
     });
     
-    // Update the UI to show selected images
     updateSelectedImagesUI();
-    
-    // Close the modal
     imageModal.style.display = 'none';
 });
 
-// Update the UI to show selected images
 function updateSelectedImagesUI() {
-    // Clear the container
     selectedImagesContainer.innerHTML = '';
     
-    // Update the count badge
     if (selectedImages.length > 0) {
         imageCountBadge.textContent = selectedImages.length;
         imageCountBadge.style.display = 'block';
         
-        // Add thumbnails for selected images
         selectedImages.forEach((image, index) => {
             const thumbnail = document.createElement('img');
             thumbnail.className = 'selected-image-thumbnail';
@@ -176,7 +157,6 @@ function updateSelectedImagesUI() {
             thumbnail.alt = image.alt || 'Selected image ' + (index + 1);
             thumbnail.title = 'Click to remove';
             
-            // Add click event to remove the image
             thumbnail.addEventListener('click', () => {
                 selectedImages.splice(index, 1);
                 updateSelectedImagesUI();
@@ -189,30 +169,28 @@ function updateSelectedImagesUI() {
     }
 }
 
-// --- Main Logic: Asking a Question or Performing a Task ---
+// --- Enhanced Main Logic with Agent Execution ---
 
 askButton.addEventListener('click', async () => {
     const question = questionInput.value.trim();
     const isAgentMode = agentModeToggle.checked;
 
     if (!question) {
-        answerDiv.textContent = isAgentMode ? 
-            'Error: Please enter a task or question.' : 
-            'Error: Please enter a question.';
+        answerDiv.innerHTML = `<span style="color: red;">Error: Please enter a ${isAgentMode ? 'task' : 'question'}.</span>`;
         return;
     }
 
-    // Show loader and disable button
+    // Show enhanced loader
     loader.style.display = 'block';
     answerDiv.style.display = 'none';
     askButton.disabled = true;
-    askButton.textContent = isAgentMode ? 'Agent Working...' : 'Thinking...';
+    askButton.textContent = isAgentMode ? '🤖 Agent Working...' : '🤔 Thinking...';
 
     try {
-        // 1. Get the current active tab
+        // Get the current active tab
         const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
 
-        // 2. Execute the content script to get page content
+        // Execute the enhanced content script
         const results = await chrome.scripting.executeScript({
             target: { tabId: tab.id },
             files: ['content.js']
@@ -223,118 +201,210 @@ askButton.addEventListener('click', async () => {
             throw new Error("Could not retrieve content from the page.");
         }
 
-        // 3. Call the Gemini API with the selected model
-        const answer = await callGeminiApi(GEMINI_API_KEY, question, pageData.text, selectedImages);
+        let answer;
+        
+        if (isAgentMode) {
+            // Execute agent task
+            answer = await executeAgentTask(tab.id, question, pageData);
+        } else {
+            // Regular Q&A mode
+            answer = await callGeminiApi(GEMINI_API_KEY, question, pageData.text, selectedImages);
+        }
 
-        // 4. Display the answer
-        answerDiv.textContent = answer;
+        // Display the answer with enhanced formatting
+        if (isAgentMode) {
+            displayAgentResult(answer);
+        } else {
+            answerDiv.textContent = answer;
+        }
 
     } catch (error) {
         console.error('Error:', error);
-        answerDiv.textContent = `An error occurred: ${error.message}`;
+        answerDiv.innerHTML = `<span style="color: red;">An error occurred: ${error.message}</span>`;
     } finally {
         // Hide loader and re-enable button
         loader.style.display = 'none';
         answerDiv.style.display = 'block';
         askButton.disabled = false;
         
-        // Update button text based on mode
         const isAgentMode = agentModeToggle.checked;
-        askButton.textContent = isAgentMode ? 'Run Agent' : 'Ask Gemini';
+        askButton.textContent = isAgentMode ? 'Execute Agent' : 'Ask Gemini';
     }
 });
 
+// --- New Agent Execution Function ---
 
-// --- Helper Function: Call Gemini API ---
+async function executeAgentTask(tabId, task, pageData) {
+    try {
+        console.log('Executing agent task:', task);
+        
+        // Inject and execute the agent task
+        const agentResults = await chrome.scripting.executeScript({
+            target: { tabId: tabId },
+            func: async (taskDescription) => {
+                // This function runs in the context of the webpage
+                if (window.webPageAgent) {
+                    const result = await window.webPageAgent.executeTask(taskDescription, {
+                        text: document.body.innerText,
+                        url: window.location.href
+                    }, null); // API key not needed for client-side actions
+                    
+                    return result;
+                } else {
+                    return {
+                        success: false,
+                        error: 'Agent not available on this page'
+                    };
+                }
+            },
+            args: [task]
+        });
+
+        const result = agentResults[0].result;
+        
+        if (!result.success) {
+            throw new Error(result.error || 'Agent execution failed');
+        }
+
+        return result;
+        
+    } catch (error) {
+        console.error('Agent execution error:', error);
+        return {
+            success: false,
+            error: error.message,
+            report: `Failed to execute agent task: ${error.message}`
+        };
+    }
+}
+
+// --- Enhanced Display Function for Agent Results ---
+
+function displayAgentResult(result) {
+    let html = '';
+    
+    if (result.success) {
+        html += `<div style="color: green; font-weight: bold; margin-bottom: 10px;">
+            ✅ Task Completed Successfully
+        </div>`;
+        
+        if (result.taskType) {
+            html += `<div style="margin-bottom: 8px;">
+                <strong>Task Type:</strong> ${result.taskType.charAt(0).toUpperCase() + result.taskType.slice(1)}
+            </div>`;
+        }
+        
+        if (result.actionsPerformed) {
+            html += `<div style="margin-bottom: 8px;">
+                <strong>Actions Performed:</strong> ${result.actionsPerformed}
+            </div>`;
+        }
+        
+        if (result.results && result.results.length > 0) {
+            html += '<div style="margin: 10px 0;"><strong>Details:</strong><ul style="margin: 5px 0; padding-left: 20px;">';
+            
+            result.results.forEach(res => {
+                Object.keys(res).forEach(key => {
+                    if (key !== 'action') {
+                        html += `<li>${key.replace(/([A-Z])/g, ' $1').toLowerCase()}: ${res[key]}</li>`;
+                    }
+                });
+            });
+            
+            html += '</ul></div>';
+        }
+        
+        if (result.report) {
+            html += `<div style="margin-top: 12px; padding: 10px; background-color: #f8f9fc; border-left: 3px solid var(--accent-blue); font-size: 13px;">
+                <strong>Agent Report:</strong><br>
+                ${result.report.replace(/\n/g, '<br>')}
+            </div>`;
+        }
+        
+    } else {
+        html += `<div style="color: red; font-weight: bold; margin-bottom: 10px;">
+            ❌ Task Failed
+        </div>`;
+        
+        if (result.error) {
+            html += `<div style="color: red; margin-bottom: 8px;">
+                <strong>Error:</strong> ${result.error}
+            </div>`;
+        }
+        
+        if (result.actionsPerformed) {
+            html += `<div style="margin-bottom: 8px;">
+                <strong>Actions Attempted:</strong> ${result.actionsPerformed}
+            </div>`;
+        }
+    }
+    
+    answerDiv.innerHTML = html;
+}
+
+// --- Helper Function: Call Gemini API (unchanged but optimized) ---
 
 async function callGeminiApi(apiKey, question, context, selectedImages = [], modelName = null) {
-    // Get the selected model from the dropdown or use the provided model name
     const model = modelName || modelSelect.value;
     const apiURL = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
-    // Get appropriate token limits based on the model
     const tokenLimits = getTokenLimitsForModel(model);
-    
-    // Check if agent mode is enabled
     const isAgentMode = agentModeToggle.checked;
     
-    // Prepare the prompt text based on mode
     let promptText;
     
     if (isAgentMode) {
-        promptText = `You are an advanced AI agent that can analyze webpage content and images to complete tasks. 
+        promptText = `You are an advanced AI agent analyzing webpage content. The user has requested: "${question}". 
         
-        AGENT INSTRUCTIONS:
-        1. Analyze the webpage content and any provided images thoroughly
-        2. If the question involves solving problems visible in the content or images, solve them step by step
-        3. If you can't find the answer in the provided content, explicitly state that you need to search for information
-        4. For any factual questions not answered by the content, assume you have performed a web search and provide the most accurate answer based on your knowledge
-        5. If asked to perform a specific task on the webpage, describe exactly how you would complete it
+        Based on the webpage content below, provide a detailed analysis and action plan:
         
         Webpage Content:
         ---
         ${context.substring(0, tokenLimits.inputTokens)}
         ---
 
-        User's Task/Question: "${question}"
-        
-        First analyze if this request can be answered using only the provided content. If not, indicate what external information you would need to search for, then provide your best answer as if you had that information.
-        
-        Response:`;  
+        Provide your analysis and recommendations for completing this task.`;  
     } else {
-        promptText = `Based on the following webpage content${selectedImages.length > 0 ? ' and provided images' : ''}, please provide a concise answer to the user's question. 
-        
-        IMPORTANT: If the webpage content doesn't contain the answer, use your general knowledge to provide the most accurate and helpful response possible. You should always try to answer the question even if it's not directly related to the webpage content.
+        promptText = `Based on the following webpage content${selectedImages.length > 0 ? ' and provided images' : ''}, please answer the user's question: "${question}"
 
         Webpage Content:
         ---
         ${context.substring(0, tokenLimits.inputTokens)}
         ---
-
-        User's Question: "${question}"
 
         Answer:`;
     }
     
-    // Prepare the request body
     const requestBody = {
         contents: [{
             parts: [{ text: promptText }]
         }],
         generationConfig: {
-            temperature: 0.7,  // Increased temperature for more creative responses when using general knowledge
+            temperature: 0.7,
             topK: 32,
             topP: 0.95,
             maxOutputTokens: tokenLimits.outputTokens
         }
     };
 
-    // Add images to the request if any are selected
     if (selectedImages.length > 0) {
-        // Process all images and add them to the request
-        // We need to use Promise.all to handle async operations
         const imagePromises = selectedImages.map(async (image) => {
             let imageData;
             if (image.src.startsWith('data:')) {
-                // For data URLs, extract the base64 part
                 imageData = image.src.split(',')[1];
             } else {
-                // For HTTP URLs, fetch and convert
                 imageData = await fetchImageAsBase64(image.src);
             }
             
             return {
                 inlineData: {
-                    mimeType: 'image/jpeg', // Assuming JPEG, adjust if needed
+                    mimeType: 'image/jpeg',
                     data: imageData
                 }
             };
         });
         
-        // Wait for all image processing to complete
         const imageParts = await Promise.all(imagePromises);
-        
-        // Add all image parts to the request
         requestBody.contents[0].parts.push(...imageParts);
     }
 
@@ -357,57 +427,49 @@ async function callGeminiApi(apiKey, question, context, selectedImages = [], mod
         if (data.candidates && data.candidates.length > 0) {
             return data.candidates[0].content.parts[0].text;
         } else {
-            return "No answer was generated. The response might be blocked due to safety settings or other issues.";
+            return "No answer was generated. The response might be blocked due to safety settings.";
         }
 
     } catch (error) {
         console.error("Failed to call Gemini API:", error);
-        throw error; // Re-throw the error to be caught by the main click handler
+        throw error;
     }
 }
 
-// Helper function to get appropriate token limits based on the model
 function getTokenLimitsForModel(model) {
-    // Optimized values for Pro subscription
-    // Pro subscription allows for maximum token usage across all models
     let inputTokens = 30000;
     let outputTokens = 2048;
     
-    // Adjust based on specific model capabilities with Pro subscription optimization
     switch(model) {
         case 'gemini-2.5-pro':
-            inputTokens = 1048576; // ~1M tokens (maximum for Pro)
-            outputTokens = 8192;   // Maximum output tokens for Pro
+            inputTokens = 1048576;
+            outputTokens = 8192;
             break;
         case 'gemini-2.5-flash':
-            inputTokens = 32768;    // Increased for Pro subscription
-            outputTokens = 4096;    // Maximum for this model
+            inputTokens = 32768;
+            outputTokens = 4096;
             break;
         case 'gemini-2.5-flash-lite':
-            inputTokens = 16384;    // Increased for Pro subscription
-            outputTokens = 2048;    // Maximum for this model
+            inputTokens = 16384;
+            outputTokens = 2048;
             break;
         case 'gemini-2.0-flash':
-            inputTokens = 32768;    // Increased for Pro subscription
-            outputTokens = 2048;    // Maximum for this model
+            inputTokens = 32768;
+            outputTokens = 2048;
             break;
-        // Add more models as needed
     }
     
     return { inputTokens, outputTokens };
 }
 
-// Helper function to fetch an image and convert it to base64
 async function fetchImageAsBase64(imageUrl) {
     try {
-        // For security reasons, we can only fetch images from the same origin or CORS-enabled sources
         const response = await fetch(imageUrl);
         const blob = await response.blob();
         
         return new Promise((resolve, reject) => {
             const reader = new FileReader();
             reader.onloadend = () => {
-                // Extract the base64 data part
                 const base64data = reader.result.split(',')[1];
                 resolve(base64data);
             };
