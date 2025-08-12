@@ -8,7 +8,7 @@ const agentModeToggle = document.getElementById('agentModeToggle');
 const agentModeStatus = document.getElementById('agentModeStatus');
 
 // Hard-coded API key - Replace with your actual Gemini API key
-const GEMINI_API_KEY = "AIzaSyAXKXQcr4sNmPQO814zkocKctBaeGsELbY";
+const GEMINI_API_KEY = "AIzaSyC9dSxnhfFUfubnDPjVJBPq6XnUHdUutPc";
 
 // Image selection elements
 const selectImagesButton = document.getElementById('selectImages');
