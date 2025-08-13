@@ -9,8 +9,8 @@ const modelSelect = document.getElementById('modelSelect');
 const agentModeToggle = document.getElementById('agentModeToggle');
 const agentModeStatus = document.getElementById('agentModeStatus');
 
-// Hard-coded API key - Replace with your actual Gemini API key
-const GEMINI_API_KEY = "AIzaSyC9dSxnhfFUfubnDPjVJBPq6XnUHdUutPc";
+// Import API key functions from config.js
+import { getApiKey, setApiKey, GEMINI_API_KEY } from './config.js';
 
 // Image selection elements
 const selectImagesButton = document.getElementById('selectImages');
@@ -169,6 +169,48 @@ function updateSelectedImagesUI() {
     }
 }
 
+// --- Document Ready Event ---
+document.addEventListener('DOMContentLoaded', async function() {
+    // Initialize the UI
+    updateSelectedImagesUI();
+    
+    // Set initial model description
+    const initialModelInfo = 'Gemini 2.5 Flash: Good balance of quality and speed';
+    answerDiv.textContent = initialModelInfo;
+    
+    // Load API key from storage
+    const apiKey = await getApiKey();
+    document.getElementById('apiKey').value = apiKey;
+    
+    // Add event listener for API key input
+    document.getElementById('apiKey').addEventListener('change', function() {
+        const newApiKey = this.value.trim();
+        if (newApiKey) {
+            setApiKey(newApiKey);
+            answerDiv.textContent = 'API key updated successfully!';
+        } else {
+            // If empty, use the default key
+            setApiKey('AIzaSyDcuFHb470LPqZfybM4vFiwH5m9XUhiiBM');
+            answerDiv.textContent = 'Using default API key.';
+        }
+    });
+    
+    // Add event listener for API key toggle
+    const apiKeyToggle = document.getElementById('apiKeyToggle');
+    const apiKeyContainer = document.getElementById('apiKeyContainer');
+    const apiKeyStatus = document.getElementById('apiKeyStatus');
+    
+    apiKeyToggle.addEventListener('change', function() {
+        if (this.checked) {
+            apiKeyContainer.style.display = 'block';
+            apiKeyStatus.textContent = 'Hide';
+        } else {
+            apiKeyContainer.style.display = 'none';
+            apiKeyStatus.textContent = 'Show';
+        }
+    });
+});
+
 // --- Enhanced Main Logic with Agent Execution ---
 
 askButton.addEventListener('click', async () => {
@@ -208,7 +250,9 @@ askButton.addEventListener('click', async () => {
             answer = await executeAgentTask(tab.id, question, pageData);
         } else {
             // Regular Q&A mode
-            answer = await callGeminiApi(GEMINI_API_KEY, question, pageData.text, selectedImages);
+            // Get the API key from storage
+            const apiKey = await getApiKey();
+            answer = await callGeminiApi(apiKey, question, pageData.text, selectedImages);
         }
 
         // Display the answer with enhanced formatting
@@ -345,6 +389,10 @@ function displayAgentResult(result) {
 // --- Helper Function: Call Gemini API (unchanged but optimized) ---
 
 async function callGeminiApi(apiKey, question, context, selectedImages = [], modelName = null) {
+    // Get the API key from storage if not provided
+    if (!apiKey) {
+        apiKey = await getApiKey();
+    }
     const model = modelName || modelSelect.value;
     const apiURL = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
