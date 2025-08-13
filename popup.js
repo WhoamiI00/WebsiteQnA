@@ -209,6 +209,94 @@ document.addEventListener('DOMContentLoaded', async function() {
             apiKeyStatus.textContent = 'Show';
         }
     });
+    
+    // Initialize agent mode settings
+    const agentSettingsSection = document.getElementById('agentSettings');
+    const agentCapabilitiesSection = document.getElementById('agentCapabilities');
+    
+    // Get agent settings elements
+    const agentBehaviorSelect = document.getElementById('agentBehavior');
+    const visualFeedbackToggle = document.getElementById('visualFeedbackToggle');
+    
+    // Handle agent mode toggle
+    agentModeToggle.addEventListener('change', function() {
+        const isAgentMode = agentModeToggle.checked;
+        
+        // Save the agent mode state
+        chrome.storage.sync.set({agentMode: isAgentMode});
+        
+        // Update UI based on agent mode
+        updateAgentModeUI(isAgentMode);
+    });
+    
+    // Handle agent behavior selection
+    agentBehaviorSelect.addEventListener('change', function() {
+        const behavior = agentBehaviorSelect.value;
+        chrome.storage.sync.set({agentBehavior: behavior});
+    });
+    
+    // Handle visual feedback toggle
+    visualFeedbackToggle.addEventListener('change', function() {
+        const visualFeedback = visualFeedbackToggle.checked;
+        chrome.storage.sync.set({agentVisualFeedback: visualFeedback});
+    });
+    
+    // Load saved agent settings
+    chrome.storage.sync.get(['agentMode', 'agentBehavior', 'agentVisualFeedback'], function(result) {
+        // Set agent mode
+        const isAgentMode = result.agentMode === true;
+        agentModeToggle.checked = isAgentMode;
+        
+        // Set agent behavior if saved
+        if (result.agentBehavior) {
+            agentBehaviorSelect.value = result.agentBehavior;
+        }
+        
+        // Set visual feedback if saved
+        if (result.agentVisualFeedback !== undefined) {
+            visualFeedbackToggle.checked = result.agentVisualFeedback;
+        }
+        
+        // Update UI based on agent mode
+        updateAgentModeUI(isAgentMode);
+    });
+    
+    // Update UI based on agent mode
+    function updateAgentModeUI(isAgentMode) {
+        if (isAgentMode) {
+            questionInput.placeholder = 'Enter a task (e.g., "Answer all quiz questions", "Upvote the first 5 posts", "Fill out this form")...';
+            answerDiv.innerHTML = `
+                <strong>🤖 Agent Mode Activated</strong><br>
+                The AI will:<br>
+                • Analyze the webpage content<br>
+                • Perform actions automatically<br>
+                • Click buttons, select answers, fill forms<br>
+                • Provide detailed reports of actions taken<br><br>
+                <em>Enter a task above and click "Execute Agent"</em>
+            `;
+            askButton.textContent = 'Execute Agent';
+            askButton.style.background = 'linear-gradient(145deg, #e74c3c, #c0392b)';
+            
+            // Show agent settings and capabilities sections if they exist
+            if (agentSettingsSection) agentSettingsSection.style.display = 'block';
+            if (agentCapabilitiesSection) agentCapabilitiesSection.style.display = 'block';
+            
+            // Add agent mode class to body for styling
+            document.body.classList.add('agent-mode-active');
+        } else {
+            questionInput.placeholder = 'e.g., What is this article about?';
+            answerDiv.textContent = 'Standard Mode. Ask a question about the webpage content.';
+            askButton.textContent = 'Ask Gemini';
+            askButton.style.background = 'linear-gradient(145deg, var(--accent-blue), var(--accent-blue-dark))';
+            
+            // Hide agent settings and capabilities sections if they exist
+            if (agentSettingsSection) agentSettingsSection.style.display = 'none';
+            if (agentCapabilitiesSection) agentCapabilitiesSection.style.display = 'none';
+            
+            // Remove agent mode class from body
+            document.body.classList.remove('agent-mode-active');
+        }
+    }
 });
 
 // --- Enhanced Main Logic with Agent Execution ---

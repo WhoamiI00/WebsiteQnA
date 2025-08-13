@@ -613,6 +613,64 @@
         } else if (document.querySelectorAll('form').length > 0) {
             content.siteType = 'form';
         }
+        
+        // Function to execute the agent on the current page
+async function executeAgent(task) {
+    console.log('Executing agent with task:', task);
+    
+    // Create a new instance of the WebPageAgent
+    const agent = new WebPageAgent();
+    
+    try {
+        // Phase 1: Enhanced Context Gathering
+        console.log('Phase 1: Enhanced Context Gathering');
+        const analysis = await agent.analyzeRenderedPage();
+        console.log('Page analysis complete:', analysis.summary);
+        
+        // Phase 2: Query Understanding
+        console.log('Phase 2: Query Understanding');
+        const queryAnalysis = await agent.analyzeTaskWithGemini(task, analysis);
+        console.log('Query understanding complete:', queryAnalysis.summary);
+        
+        // Phase 3: Intelligent Planning
+        console.log('Phase 3: Intelligent Planning');
+        const actionPlan = await agent.createDetailedPlan(task, queryAnalysis, analysis);
+        console.log('Action plan created with', actionPlan.steps.length, 'steps');
+        
+        // Phase 4: Smart Execution
+        console.log('Phase 4: Smart Execution');
+        const executionResults = await agent.executeWithIntelligence(actionPlan);
+        console.log('Execution complete with', executionResults.length, 'steps executed');
+        
+        // Phase 5: Verification
+        console.log('Phase 5: Verification');
+        const verificationResult = await agent.verifyCompletion(task, executionResults, analysis);
+        console.log('Verification result:', verificationResult.success ? 'Success' : 'Failed');
+        
+        // Phase 6: Reporting
+        console.log('Phase 6: Reporting');
+        const report = agent.generateReport({
+            task,
+            analysis,
+            queryAnalysis,
+            actionPlan,
+            executionResults,
+            verificationResult
+        });
+        console.log('Generated report:', report);
+        
+        return {
+            success: verificationResult.success,
+            report: report
+        };
+    } catch (error) {
+        console.error('Error executing agent:', error);
+        return {
+            success: false,
+            error: error.message
+        };
+    }
+}
 
         return content;
     }
